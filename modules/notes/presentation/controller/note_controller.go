@@ -3,8 +3,10 @@ package controller
 import (
 	"encoding/json"
 	"net/http"
+	"note-tracker/commons/strings"
 	"note-tracker/modules/notes/data/model"
 	"note-tracker/modules/notes/domain/usecase"
+	"note-tracker/modules/notes/presentation/dto"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -22,13 +24,19 @@ func NewNoteController(notesUsecase *usecase.NoteUsecase) *NoteController {
 
 // HandleCreateNote processes note creation requests
 func (c *NoteController) HandleCreateNote(w http.ResponseWriter, r *http.Request) {
-	var note model.Note
-	if err := json.NewDecoder(r.Body).Decode(&note); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+	var note_dto dto.CreateNoteRequest
+	if err := json.NewDecoder(r.Body).Decode(&note_dto); err != nil {
+		http.Error(w, strings.InvalidCreateNoteRequest, http.StatusBadRequest)
 		return
 	}
 
-	createdNote, err := c.NoteUsecase.CreateNote(r.Context(), &note)
+	noteModel, err := note_dto.ToModel()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	createdNote, err := c.NoteUsecase.CreateNote(r.Context(), noteModel)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -42,7 +50,7 @@ func (c *NoteController) HandleCreateNote(w http.ResponseWriter, r *http.Request
 func (c *NoteController) HandleUpdateNote(w http.ResponseWriter, r *http.Request) {
 	var note model.Note
 	if err := json.NewDecoder(r.Body).Decode(&note); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+		http.Error(w, strings.InvalidRequestData, http.StatusBadRequest)
 		return
 	}
 
