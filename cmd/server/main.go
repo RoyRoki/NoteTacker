@@ -4,19 +4,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"note-tracker/commons/database"
-	"note-tracker/commons/logger"
-	"note-tracker/modules/notes/data/repository_impl"
-	"note-tracker/modules/notes/domain/usecase"
-	"note-tracker/modules/notes/presentation/controller"
-	"note-tracker/modules/notes/presentation/router"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
+
+	"note-tracker/commons/database"
+	"note-tracker/commons/logger"
+	"note-tracker/commons/middleware"
+	"note-tracker/modules/notes/di"
 )
 
 func main() {
-
 	// Initialize logger early.
 	logger.InitLogger()
 
@@ -33,20 +31,17 @@ func main() {
 		log.Fatal("Migration failed:", err)
 	}
 
-	// Initialize repository, use_case, and controller
-	notesRepo := repository_impl.NewNoteRepository(db)
-	notesUsecase := usecase.NewNoteUsecase(notesRepo)
-	notesController := controller.NewNoteController(notesUsecase)
-
 	// Create a new Gorilla Mux router
 	r := mux.NewRouter()
 
 	// Register routes with the controller using Gorilla Mux
-	router.RegisterNoteRoutes(r, notesController)
+	di.RegisterNoteModule(db, r)
 
-	// Start the HTTP server
+	corsWrapped := middleware.CORS(r)
+
+	// Start the HTTP server with custom CORS middleware
 	fmt.Println("Server is starting on :8080...")
-	if err := http.ListenAndServe(":8080", r); err != nil {
+	if err := http.ListenAndServe(":8080", corsWrapped); err != nil {
 		fmt.Println("Server error:", err)
 	}
 }

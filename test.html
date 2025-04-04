@@ -1,0 +1,842 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Go Note Taker</title>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" />
+    <style>
+        :root {
+            --go-blue: #00add8;
+            --go-light-blue: #5dc9e2;
+            --go-dark: #2e3440;
+            --go-light: #f5f5f5;
+            --go-gray: #e2e8f0;
+            --go-text: #333333;
+            --animation-speed: 0.3s;
+        }
+
+        .dark-mode {
+            --go-blue: #00add8;
+            --go-light-blue: #5dc9e2;
+            --go-dark: #f5f5f5;
+            --go-light: #1a202c;
+            --go-gray: #4a5568;
+            --go-text: #e2e8f0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Inter", sans-serif;
+        }
+
+        body {
+            background-color: var(--go-light);
+            color: var(--go-text);
+            line-height: 1.6;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300ADD8' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+            transition:
+                background-color 0.3s,
+                color 0.3s;
+        }
+
+        .dark-mode body {
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300ADD8' fill-opacity='0.2'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--go-blue);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo svg {
+            width: 50px;
+            height: 50px;
+        }
+
+        .logo h1 {
+            font-size: 2rem;
+            color: var(--go-blue);
+            font-weight: 700;
+        }
+
+        .theme-toggle {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: var(--go-blue);
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+
+        .theme-toggle:hover {
+            background-color: rgba(0, 173, 216, 0.1);
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .note-form {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition:
+                transform var(--animation-speed),
+                background-color 0.3s;
+            max-height: 100vh;
+            overflow: scroll;
+        }
+
+        .dark-mode .note-form {
+            background-color: #2d3748;
+        }
+
+        .note-form:hover {
+            transform: translateY(-5px);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--go-gray);
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color var(--animation-speed);
+            background-color: inherit;
+            color: var(--go-text);
+        }
+
+        .dark-mode input,
+        .dark-mode textarea,
+        .dark-mode select {
+            background-color: #2d3748;
+            border-color: #4a5568;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--go-blue);
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+
+        button {
+            background-color: var(--go-blue);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition:
+                background-color var(--animation-speed),
+                transform var(--animation-speed);
+        }
+
+        button:hover {
+            background-color: var(--go-light-blue);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .cancel-btn {
+            background-color: #e53e3e;
+        }
+
+        .cancel-btn:hover {
+            background-color: #f56565;
+        }
+
+        .notes-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .notes-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .notes-header h2 {
+            color: var(--go-blue);
+        }
+
+        .search-container {
+            display: flex;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+
+        .search-container input {
+            padding-left: 2.5rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--go-gray);
+        }
+
+        .note-card {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition:
+                transform var(--animation-speed),
+                box-shadow var(--animation-speed),
+                background-color 0.3s;
+            animation: fadeIn var(--animation-speed);
+            margin-bottom: 1.5rem;
+        }
+
+        .dark-mode .note-card {
+            background-color: #2d3748;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .note-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .note-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+        }
+
+        .note-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--go-dark);
+        }
+
+        .note-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .action-btn {
+            background-color: transparent;
+            color: var(--go-text);
+            padding: 0.25rem;
+            border-radius: 4px;
+            transition: background-color var(--animation-speed);
+        }
+
+        .action-btn:hover {
+            background-color: var(--go-gray);
+            transform: none;
+        }
+
+        .edit-btn {
+            color: var(--go-blue);
+        }
+
+        .delete-btn {
+            color: #e53e3e;
+        }
+
+        .note-content {
+            color: var(--go-text);
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--go-gray);
+            border-top: 4px solid var(--go-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #718096;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 1rem 1.5rem;
+            background-color: var(--go-blue);
+            color: white;
+            border-radius: 4px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transform: translateY(20px);
+            transition:
+                opacity var(--animation-speed),
+                transform var(--animation-speed);
+            z-index: 1000;
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .toast.error {
+            background-color: #e53e3e;
+        }
+
+        .note-date {
+            font-size: 0.85rem;
+            color: #718096;
+            margin-bottom: 0.75rem;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <svg viewBox="0 0 205 205" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M50,0 C77.5,0 100,22.5 100,50 C100,77.5 77.5,100 50,100 C22.5,100 0,77.5 0,50 C0,22.5 22.5,0 50,0 Z"
+                        fill="#00ADD8" />
+                    <path
+                        d="M155,0 C182.5,0 205,22.5 205,50 C205,77.5 182.5,100 155,100 C127.5,100 105,77.5 105,50 C105,22.5 127.5,0 155,0 Z"
+                        fill="#00ADD8" />
+                    <path
+                        d="M50,105 C77.5,105 100,127.5 100,155 C100,182.5 77.5,205 50,205 C22.5,205 0,182.5 0,155 C0,127.5 22.5,105 50,105 Z"
+                        fill="#00ADD8" />
+                    <path
+                        d="M155,105 C182.5,105 205,127.5 205,155 C205,182.5 182.5,205 155,205 C127.5,205 105,182.5 105,155 C105,127.5 127.5,105 155,105 Z"
+                        fill="#5DC9E2" />
+                </svg>
+                <h1>Go Note Taker</h1>
+            </div>
+            <button id="themeToggle" class="theme-toggle" aria-label="Toggle dark mode">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="sun-icon">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                    class="moon-icon" style="display: none">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </button>
+        </header>
+
+        <div class="app-container">
+            <div class="note-form">
+                <h2>Add New Note</h2>
+                <form id="noteForm">
+                    <input type="hidden" id="noteId" value="" />
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" id="title" name="title" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="content">Content</label>
+                        <textarea id="content" name="content" required></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" id="saveButton">Save Note</button>
+                        <button type="button" id="cancelButton" class="cancel-btn" style="display: none">
+                            Cancel
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="notes-container">
+                <div class="notes-header">
+                    <h2>Your Notes</h2>
+                    <div class="refresh-container">
+                        <button id="refreshButton">Refresh</button>
+                    </div>
+                </div>
+                <div class="search-container">
+                    <span class="search-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </span>
+                    <input type="text" id="searchInput" placeholder="Search notes..." />
+                </div>
+                <div id="loading" class="loading">
+                    <div class="loading-spinner"></div>
+                </div>
+                <div id="notesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        // API endpoints
+        const API_BASE = "http://localhost:8080/notes";
+
+        // DOM Elements
+        const noteForm = document.getElementById("noteForm");
+        const noteIdInput = document.getElementById("noteId");
+        const titleInput = document.getElementById("title");
+        const contentInput = document.getElementById("content");
+        const saveButton = document.getElementById("saveButton");
+        const cancelButton = document.getElementById("cancelButton");
+        const notesList = document.getElementById("notesList");
+        const loading = document.getElementById("loading");
+        const refreshButton = document.getElementById("refreshButton");
+        const toast = document.getElementById("toast");
+        const searchInput = document.getElementById("searchInput");
+        const themeToggle = document.getElementById("themeToggle");
+        const sunIcon = document.querySelector(".sun-icon");
+        const moonIcon = document.querySelector(".moon-icon");
+
+        // State
+        let notes = [];
+        let isEditing = false;
+
+        // Initialize the app
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchNotes();
+            setupEventListeners();
+            loadThemePreference();
+        });
+
+        // Setup event listeners
+        function setupEventListeners() {
+            noteForm.addEventListener("submit", handleFormSubmit);
+            cancelButton.addEventListener("click", resetForm);
+            refreshButton.addEventListener("click", fetchNotes);
+            searchInput.addEventListener("input", filterNotes);
+            themeToggle.addEventListener("click", toggleTheme);
+        }
+
+        // Toggle dark/light theme
+        function toggleTheme() {
+            document.documentElement.classList.toggle("dark-mode");
+            const isDarkMode =
+                document.documentElement.classList.contains("dark-mode");
+            localStorage.setItem("darkMode", isDarkMode);
+
+            // Toggle icons
+            if (isDarkMode) {
+                sunIcon.style.display = "none";
+                moonIcon.style.display = "block";
+            } else {
+                sunIcon.style.display = "block";
+                moonIcon.style.display = "none";
+            }
+        }
+
+        // Load theme preference from localStorage
+        function loadThemePreference() {
+            const isDarkMode = localStorage.getItem("darkMode") === "true";
+            if (isDarkMode) {
+                document.documentElement.classList.add("dark-mode");
+                sunIcon.style.display = "none";
+                moonIcon.style.display = "block";
+            }
+        }
+
+        // Fetch all notes from the API
+        async function fetchNotes() {
+            showLoading(true);
+            try {
+                const response = await fetch(API_BASE);
+                if (!response.ok) {
+                    throw new Error("Failed to fetch notes");
+                }
+                notes = await response.json();
+                renderNotes();
+                showToast("Notes loaded successfully");
+            } catch (error) {
+                console.error("Error fetching notes:", error);
+                showToast("Failed to load notes", true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Filter notes based on search input
+        function filterNotes() {
+            const searchTerm = searchInput.value.toLowerCase();
+
+            const filteredNotes = notes.filter((note) => {
+                return (
+                    note.title.toLowerCase().includes(searchTerm) ||
+                    note.note.toLowerCase().includes(searchTerm)
+                );
+            });
+
+            renderFilteredNotes(filteredNotes);
+        }
+
+        // Render filtered notes
+        function renderFilteredNotes(filteredNotes) {
+            notesList.innerHTML = "";
+
+            if (filteredNotes.length === 0) {
+                notesList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No matching notes</h3>
+                        <p>Try adjusting your search criteria</p>
+                    </div>
+                `;
+                return;
+            }
+
+            filteredNotes.forEach(renderNoteCard);
+        }
+
+        // Format relative time
+        function formatRelativeTime(dateString) {
+            if (!dateString) return "No date";
+
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffInSeconds = Math.floor((now - date) / 1000);
+
+            if (isNaN(diffInSeconds)) return dateString;
+
+            if (diffInSeconds < 60) {
+                return "just now";
+            } else if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                return `${minutes}m ago`;
+            } else if (diffInSeconds < 86400) {
+                const hours = Math.floor(diffInSeconds / 3600);
+                return `${hours}h ago`;
+            } else if (diffInSeconds < 604800) {
+                const days = Math.floor(diffInSeconds / 86400);
+                return `${days}d ago`;
+            } else {
+                return new Date(dateString).toLocaleDateString();
+            }
+        }
+
+        // Render notes to the DOM
+        function renderNotes() {
+            notesList.innerHTML = "";
+
+            if (notes.length === 0) {
+                notesList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No notes yet</h3>
+                        <p>Create your first note to get started!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            notes.forEach(renderNoteCard);
+        }
+
+        // Render a single note card
+        function renderNoteCard(note) {
+            const noteCard = document.createElement("div");
+            noteCard.className = "note-card";
+
+            noteCard.innerHTML = `
+                <div class="note-header">
+                    <h3 class="note-title">${escapeHtml(note.title)}</h3>
+                    <div class="note-actions">
+                        <button class="action-btn edit-btn" data-id="${note.id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button class="action-btn delete-btn" data-id="${note.id}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="note-date">${formatRelativeTime(note.date)}</div>
+                <div class="note-content">${escapeHtml(note.note)}</div>
+            `;
+
+            // Add note card to the list
+            notesList.appendChild(noteCard);
+
+            // Add event listeners after the element is in the DOM
+            const editBtn = noteCard.querySelector(".edit-btn");
+            const deleteBtn = noteCard.querySelector(".delete-btn");
+
+            editBtn.addEventListener("click", () => editNote(note.id));
+            deleteBtn.addEventListener("click", () => deleteNote(note.id));
+        }
+
+        // Handle form submission (create or update note)
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const noteData = {
+                title: titleInput.value,
+                note: contentInput.value,
+                date: new Date().toISOString(),
+            };
+
+            if (isEditing) {
+                await updateNote(noteIdInput.value, noteData);
+            } else {
+                await createNote(noteData);
+            }
+
+            resetForm();
+        }
+
+        // Create a new note
+        async function createNote(noteData) {
+            showLoading(true);
+            try {
+                const response = await fetch(API_BASE, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(noteData),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to create note");
+                }
+
+                await fetchNotes();
+                showToast("Note created successfully");
+            } catch (error) {
+                console.error("Error creating note:", error);
+                showToast("Failed to create note", true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Update an existing note
+        async function updateNote(id, noteData) {
+            showLoading(true);
+            try {
+                // Make sure to include the ID in the request body
+                const updateData = {
+                    id: parseInt(id),
+                    title: noteData.title,
+                    note: noteData.note,
+                    date: noteData.date,
+                };
+
+                const response = await fetch(API_BASE, {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(updateData),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to update note");
+                }
+
+                await fetchNotes();
+                showToast("Note updated successfully");
+            } catch (error) {
+                console.error("Error updating note:", error);
+                showToast("Failed to update note", true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Delete a note
+        async function deleteNote(id) {
+            if (!confirm("Are you sure you want to delete this note?")) {
+                return;
+            }
+
+            showLoading(true);
+            try {
+                const response = await fetch(`${API_BASE}/${id}`, {
+                    method: "DELETE",
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to delete note");
+                }
+
+                await fetchNotes();
+                showToast("Note deleted successfully");
+            } catch (error) {
+                console.error("Error deleting note:", error);
+                showToast("Failed to delete note", true);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // Edit a note (populate form)
+        function editNote(id) {
+            const note = notes.find((n) => n.id === parseInt(id));
+            if (!note) return;
+
+            isEditing = true;
+            noteIdInput.value = note.id;
+            titleInput.value = note.title;
+            contentInput.value = note.note;
+
+            saveButton.textContent = "Update Note";
+            cancelButton.style.display = "block";
+
+            // Scroll to form
+            document
+                .querySelector(".note-form")
+                .scrollIntoView({behavior: "smooth"});
+        }
+
+        // Reset the form
+        function resetForm() {
+            isEditing = false;
+            noteForm.reset();
+            noteIdInput.value = "";
+            saveButton.textContent = "Save Note";
+            cancelButton.style.display = "none";
+        }
+
+        // Show/hide loading spinner
+        function showLoading(show) {
+            loading.style.display = show ? "flex" : "none";
+        }
+
+        // Show toast notification
+        function showToast(message, isError = false) {
+            toast.textContent = message;
+            toast.className = isError ? "toast error show" : "toast show";
+
+            setTimeout(() => {
+                toast.className = "toast";
+            }, 3000);
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(unsafe) {
+            if (typeof unsafe !== "string") return "";
+
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+
+</html>
